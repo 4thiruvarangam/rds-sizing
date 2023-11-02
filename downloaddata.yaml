@@ -1,0 +1,23 @@
+---
+    - name: Download the file with curl
+      command: curl -O -L -s http://34.125.170.188/recommendations.json
+      args:
+        creates: /home/ansible/finalscripts/scripts/recommendations.json
+      register: curl_result
+    - name: print
+      debug:
+        var: curl_result
+    - name: Send HTTP GET request to the URL
+      uri:
+        url: http://34.125.170.188/recommendations.json
+        method: GET
+        status_code: 200  
+      register: http_result
+    - name: print
+      debug:
+        var: http_result
+
+    - name: Check if the URL returned a 404 error
+      debug:
+        msg: "Download not successfull !!. Please try again"
+      when: http_result.status != 200 or curl_result.rc != 0
