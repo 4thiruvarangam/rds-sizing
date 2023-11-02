@@ -1,0 +1,22 @@
+-
+ - name: main file for RDS resizing
+   hosts: localhost
+   gather_facts: no
+   
+
+   pre_tasks:
+   - name: delete existing file
+     include_tasks:
+       file: /home/ansible/finalscripts/scripts/deletefile.yaml
+
+   - name: Download the RDS sizing data
+     include_tasks:
+       file: /home/ansible/finalscripts/scripts/downloaddata.yaml
+     
+   - name: check the sizing data is downloaded
+     include_tasks:
+       file: /home/ansible/finalscripts/scripts/checkforfile.yaml
+
+   - name: check the sizing data is downloaded
+     include_tasks:
+       file: /home/ansible/finalscripts/scripts/single_rds_lookup.yaml
