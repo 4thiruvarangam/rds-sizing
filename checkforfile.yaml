@@ -1,0 +1,10 @@
+---
+  - name: Check if the file exists
+    stat:
+      path: /home/ansible/finalscripts/scripts/recommendations.json
+    register: file_status
+
+  - name: Print the file status
+    debug:
+      msg: "File does not exists"
+    when: file_status.stat.exists == false
