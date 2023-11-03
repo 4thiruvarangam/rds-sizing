@@ -1,0 +1,30 @@
+---
+- name: Check if a specific RDS database exists
+  hosts: localhost
+  gather_facts: False
+  tasks:
+
+    # Reading the sizing data
+    - name: Read sizing  data from the file
+      slurp:
+        src: recommendations.json
+      register: json_file_content
+
+    # Converting it to JSON format
+    - name: Convert sizing data to json content
+      set_fact:
+        json_data: "{{ json_file_content.content | b64decode | from_json }}"
+
+    - name: Get RDS instance facts
+      rds_instance:
+        aws_access_key: AKIAUG6E7V7TS3FBYH6A
+        aws_secret_key: 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
+        region: us-east-1
+        db_instance_identifier: "{{ item.name }}"
+        instance_type: "{{ item.recommendations[0].nodeType }}"
+      register: singe_rds_instance_change
+      loop: "{{ json_data.result}}"
+      loop_control:
+        loop_var: item
+      when: item.recommendations[0].action == "Rightsize" and item.clusterIdentifier == "N/A" and item.clusterrole == "instance"
+      ignore_errors: yes
