@@ -1,0 +1,61 @@
+---
+    # Reading the sizing data
+    - name: Read sizing  data from the file
+      slurp:
+        src: recommendations.json
+      register: json_file_content
+
+    # Converting it to JSON format
+    - name: Convert sizing data to json content
+      set_fact:
+        json_data: "{{ json_file_content.content | b64decode | from_json }}"
+
+    - name: Get RDS instance facts
+      rds_instance_info:
+        aws_access_key: AKIAUG6E7V7TS3FBYH6A
+        aws_secret_key: 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
+        region: us-east-1
+        db_instance_identifier: "{{ item.name }}"
+      register: check_rds_instance
+      loop: "{{ json_data.result}}"
+      loop_control:
+        loop_var: item
+      when: item.recommendations[0].action == "Rightsize" and item.clusterIdentifier == "N/A" and item.clusterrole == "instance"
+      ignore_errors: yes
+
+
+    # Saving the RDS data to a file
+    - name: Save the filtered JSON to a file
+      copy:
+        content: "{{ check_rds_instance }}"
+        dest: check_rds_instance_output
+
+
+    # Extracting the Json data
+    - name: Extracting the Json data
+      command: jq -c '.results[].instances | select(. != null)'  check_rds_instance_output
+      register: check_rds_instance_output_ext
+
+
+    - name: Save the filtered JSON to a file
+      copy:
+        content: "[{{ check_rds_instance_output_ext.stdout_lines | join(',') }}]"
+        dest: check_rds_instance_outputjson
+
+
+    # Reading the sizing data
+    - name: Read sizing  data from the file
+      slurp:
+        src: check_rds_instance_outputjson
+      register: rds_standalone_list
+
+    # Converting it to JSON format
+    - name: Convert sizing data to json content
+      set_fact:
+        rds_standalone_listjson: "{{ rds_standalone_list.content | b64decode | from_json }}"
+
+    - name: print the name of  the stand alone instance that will be modified
+      debug:
+        msg: "Database Name: {{ item.db_instance_identifier }},  Preferred Maintenance Window: {{ item.preferred_maintenance_window }}, Pending values waiting for modification: {{ item.pending_modified_values }}"
+      with_items: "{{ rds_standalone_listjson }}"
+
